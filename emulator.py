@@ -330,7 +330,42 @@ class Assembler:
             elif ops == 'BH': bytes_code, size = [0xFE, 0xCF], 2
             else:
                 raise SyntaxError(f"Line {line_num}: Unsupported DEC {ops}")
+
+        # CMP
+        elif mnem == 'CMP':
+            dest, src = ops.split(',', 1)
             
+            # 1. CMP reg, [SI] or [DI]
+            if src in ['[SI]', '[DI]']:
+                if dest == 'AL': bytes_code, size = [0x3A, 0x04 if src == '[SI]' else 0x05], 2
+                elif dest == 'AX': bytes_code, size = [0x3B, 0x04 if src == '[SI]' else 0x05], 2
+                elif dest == 'BL': bytes_code, size = [0x3A, 0x1C if src == '[SI]' else 0x1D], 2
+                elif dest == 'BX': bytes_code, size = [0x3B, 0x1C if src == '[SI]' else 0x1D], 2
+                elif dest == 'CL': bytes_code, size = [0x3A, 0x0C if src == '[SI]' else 0x0D], 2
+                elif dest == 'CX': bytes_code, size = [0x3B, 0x0C if src == '[SI]' else 0x0D], 2
+                elif dest == 'DL': bytes_code, size = [0x3A, 0x14 if src == '[SI]' else 0x15], 2
+                elif dest == 'DX': bytes_code, size = [0x3B, 14 if src == '[SI]' else 0x15], 2
+                else:
+                    # Fallback
+                    bytes_code, size = [0x3A, 0x00], 2
+
+            # 2. CMP reg, Immediate (e.g., CMP AL, 09)
+            elif self._is_hex(src):
+                imm_val = int(src, 16)
+                # 8-bit Register check
+                if dest in ['AL','BL','CL','DL','AH','BH','CH','DH']:
+                     bytes_code, size = [0x80, 0xF8], 2
+                # 16-bit Register check
+                else:
+                     bytes_code, size = [0x81, 0xF8], 4
+
+            # 3. CMP reg, reg
+            else:
+                if (dest.endswith('L') or dest.endswith('H')) and (src.endswith('L') or src.endswith('H')):
+                     bytes_code, size = [0x38, 0xC0], 2
+                else:
+                     bytes_code, size = [0x39, 0xC0], 2
+                        
         # Jumps
         elif mnem in ['JMP', 'JNZ', 'JZ', 'JNB', 'JNA', 'JA', 'JB', 'JG', 'JL', 'JGE', 'JLE']:
             # Can be label or hex address

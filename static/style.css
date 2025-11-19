@@ -271,7 +271,7 @@ input[type="range"] {
 }
 
 .memory-controls input {
-    flex: 1;
+    width: 80px; 
     background: #001a00;
     border: 1px solid #003300;
     color: #00ff00;
