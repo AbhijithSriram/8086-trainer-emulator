@@ -371,6 +371,27 @@ def get_registers():
             'error': str(e)
         }), 400
 
-
+@app.route('/api/memory/clear', methods=['POST'])
+def clear_memory_data():
+    """Clear entire memory endpoint"""
+    try:
+        session_id = session.get('session_id')
+        
+        if session_id and session_id in emulator_sessions:
+            emu = emulator_sessions[session_id]
+            # Call the new clear method we just added
+            emu['memory'].clear()
+            
+        return jsonify({
+            'success': True,
+            'message': 'Memory cleared'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 400
+    
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8080)

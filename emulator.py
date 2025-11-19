@@ -6,6 +6,10 @@ class Memory:
     """1MB Memory"""
     def __init__(self):
         self.data = bytearray(0x100000)
+
+    def clear(self):
+        """Clear all memory"""
+        self.data = bytearray(0x100000)
     
     def read(self, addr: int) -> int:
         return self.data[addr & 0xFFFFF]

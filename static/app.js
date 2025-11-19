@@ -204,6 +204,29 @@ async function resetEmulator() {
     }
 }
 
+async function clearMemory() {
+    // Safety check so users don't accidentally wipe their data
+    if (!confirm("Are you sure you want to clear ALL memory? This cannot be undone.")) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/api/memory/clear`, {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            addLog('Memory completely cleared', 'success');
+            // Refresh the view so they see the zeros immediately
+            updateMemoryView();
+        }
+    } catch (error) {
+        addLog(`ERROR: ${error.message}`, 'error');
+    }
+}
+
 async function updateRegisters() {
     try {
         const response = await fetch(`${API_BASE}/api/registers`);
