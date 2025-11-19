@@ -1,0 +1,400 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Courier New', monospace;
+    background: #1a1a1a;
+    color: #00ff00;
+    padding: 20px;
+}
+
+h1 {
+    color: #00ff00;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 28px;
+    text-shadow: 0 0 10px #00ff00;
+}
+
+.container {
+    max-width: 1600px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 500px;
+    gap: 20px;
+}
+
+.left-panel, .panel-section {
+    background: #0a0a0a;
+    border: 2px solid #333;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.trainer-display {
+    background: #0a3d0a;
+    border: 3px solid #00aa00;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: inset 0 0 20px rgba(0, 255, 0, 0.2);
+}
+
+.display-line {
+    background: #001a00;
+    border: 2px solid #004400;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 5px;
+    font-size: 24px;
+    color: #00ff00;
+    text-shadow: 0 0 5px #00ff00;
+    letter-spacing: 2px;
+}
+
+.display-line.top {
+    font-size: 18px;
+    color: #00dd00;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.control-group label {
+    color: #00aa00;
+    font-weight: bold;
+}
+
+.control-group input[type="text"] {
+    background: #001a00;
+    border: 2px solid #00aa00;
+    color: #00ff00;
+    padding: 8px;
+    font-family: 'Courier New';
+    border-radius: 3px;
+    width: 100px;
+    font-weight: bold;
+}
+
+.hint {
+    color: #00aa00;
+    font-size: 14px;
+}
+
+/* Container to hold gutter and textarea side-by-side */
+.editor-container {
+    display: flex;
+    background: #0a0a0a;
+    border: 2px solid #333;
+    border-radius: 5px;
+    overflow: hidden; /* Keeps rounded corners clean */
+}
+
+/* The Address Gutter (Left side) */
+.line-numbers {
+    background: #0f1f0f; /* Slightly different green background */
+    color: #008800;      /* Darker green text */
+    padding: 15px 10px;  /* MUST match textarea padding */
+    text-align: right;
+    border-right: 1px solid #333;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;     /* MUST match textarea */
+    line-height: 1.5;    /* MUST match textarea */
+    min-width: 85px;     /* Width for "FFFF: " */
+    overflow: hidden;    /* Hide scrollbar, we sync via JS */
+    user-select: none;   /* Prevent selecting the addresses */
+    white-space: pre;    /* Preserve newlines */
+}
+
+/* The Code Input (Right side) */
+.code-input {
+    flex: 1;             /* Take remaining width */
+    border: none;        /* Remove individual border */
+    border-radius: 0;
+    padding: 15px;       /* Match gutter padding */
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    line-height: 1.5;
+    resize: none;        /* Disable resize to keep layout simple */
+    white-space: pre;    /* Prevent text wrapping breaking alignment */
+    overflow-x: auto;    /* Allow horizontal scroll if lines are long */
+    outline: none;
+}
+.code-input:focus {
+    border: none;
+    outline: none;
+}
+
+.code-input::placeholder { color: #006600; }
+
+.controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 20px 0;
+}
+
+button {
+    background: #003300;
+    color: #00ff00;
+    border: 2px solid #00aa00;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-family: 'Courier New';
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.2s;
+}
+
+button:hover {
+    background: #00aa00;
+    color: #000;
+    box-shadow: 0 0 10px #00ff00;
+}
+
+button:active { transform: scale(0.95); }
+
+button.danger {
+    background: #330000;
+    border-color: #aa0000;
+    color: #ff0000;
+}
+
+button.danger:hover {
+    background: #aa0000;
+    color: #fff;
+}
+
+.speed-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+input[type="range"] {
+    flex: 1;
+    height: 8px;
+    background: #003300;
+    border-radius: 5px;
+}
+
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.panel-section h2 {
+    color: #00ff00;
+    font-size: 18px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10px;
+}
+
+.registers-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.register {
+    background: #001a00;
+    border: 1px solid #003300;
+    padding: 10px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.register-name {
+    color: #00aa00;
+    font-weight: bold;
+}
+
+.register-value {
+    color: #00ff00;
+    font-size: 18px;
+}
+
+.register.highlight {
+    background: #003300;
+    border-color: #00ff00;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+    animation: pulse 0.8s;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.flags-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+}
+
+.flag {
+    background: #001a00;
+    border: 1px solid #003300;
+    padding: 8px;
+    border-radius: 3px;
+    text-align: center;
+}
+
+.flag-name {
+    color: #00aa00;
+    font-size: 12px;
+    display: block;
+}
+
+.flag-value {
+    color: #00ff00;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.flag.set {
+    background: #003300;
+    border-color: #00ff00;
+}
+
+.memory-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.memory-controls input {
+    flex: 1;
+    background: #001a00;
+    border: 1px solid #003300;
+    color: #00ff00;
+    padding: 8px;
+    font-family: 'Courier New';
+    border-radius: 3px;
+}
+
+.memory-grid {
+    background: #001a00;
+    border: 1px solid #003300;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 13px;
+    overflow-x: auto;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.memory-row {
+    display: flex;
+    margin: 2px 0;
+}
+
+.memory-address {
+    color: #00aa00;
+    width: 60px;
+    margin-right: 10px;
+}
+
+.memory-bytes {
+    display: flex;
+    gap: 8px;
+}
+
+.memory-byte {
+    color: #00ff00;
+    width: 25px;
+    text-align: center;
+}
+
+.output-console {
+    background: #001a00;
+    border: 1px solid #003300;
+    border-radius: 5px;
+    padding: 10px;
+    min-height: 150px;
+    max-height: 250px;
+    overflow-y: auto;
+    font-size: 14px;
+}
+
+.log-entry {
+    margin: 2px 0;
+    padding: 2px 5px;
+}
+
+.log-entry.error { color: #ff4444; }
+.log-entry.success { color: #00ff00; }
+.log-entry.info { color: #00aaaa; }
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.modal-content {
+    background-color: #0a0a0a;
+    margin: 10% auto;
+    padding: 20px;
+    border: 3px solid #00aa00;
+    border-radius: 10px;
+    width: 500px;
+    color: #00ff00;
+}
+
+.close {
+    color: #00ff00;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover { color: #ff0000; }
+
+.mem-edit-controls {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+    align-items: center;
+}
+
+.mem-edit-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin: 15px 0;
+}
+
+.mem-edit-addr {
+    color: #00aa00;
+    font-size: 18px;
+    min-width: 60px;
+}
+
+.mem-edit-history {
+    background: #001a00;
+    border: 1px solid #003300;
+    padding: 10px;
+    border-radius: 5px;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 10px;
+}
+
+@media (max-width: 1200px) {
+    .container { grid-template-columns: 1fr; }
+}

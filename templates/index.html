@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8086 Trainer Kit Emulator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>8086 Trainer Kit Emulator</h1>
+    
+    <div class="container">
+        <!-- Left Panel: Code Editor -->
+        <div class="left-panel">
+            <!-- Trainer Kit Display -->
+            <div class="trainer-display">
+                <div class="display-line top" id="topDisplay">
+                    MODE: EDIT | ADDRESS: 0000
+                </div>
+                <div class="display-line" id="bottomDisplay">
+                    READY TO ACCEPT INPUT
+                </div>
+            </div>
+
+            <!-- Start Address Control -->
+            <div class="control-group">
+                <label>Start Address (A):</label>
+                <input type="text" id="startAddress" value="1000" maxlength="4" placeholder="1000">
+                <span class="hint">← Program start address (hex)</span>
+            </div>
+
+            <!-- Code Editor -->
+            <div class="code-editor">
+                <div class="editor-container">
+                    <div class="line-numbers" id="addressGutter">1000:</div>
+                    <textarea class="code-input" id="codeInput" placeholder="Enter 8086 assembly code...
+
+Example (Find Maximum Number):
+MOV SI, 2000
+MOV CX, 0000
+MOV CL, [SI]
+INC SI
+MOV AX, 0000
+MOV AL, [SI]
+DEC CL
+INC SI
+CMP AL, [SI]
+JNB 1017
+MOV AL, [SI]
+DEC CL
+JNZ 1010
+MOV DI, 3000
+MOV [DI], AL
+HLT" spellcheck="false"></textarea>
+                </div>
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="controls">
+                <button onclick="assembleCode()">ASSEMBLE</button>
+                <button onclick="runProgram()">RUN</button>
+                <button onclick="stepProgram()">STEP</button>
+                <button onclick="resetEmulator()" class="danger">RESET</button>
+            </div>
+
+            <!-- Speed Control -->
+            <div class="speed-control">
+                <label>Execution Speed:</label>
+                <input type="range" id="speedSlider" min="50" max="2000" value="500">
+                <span id="speedValue">500ms</span>
+            </div>
+
+            <!-- Output Console -->
+            <div class="panel-section">
+                <h2>Console Output</h2>
+                <div class="output-console" id="console">
+                    <div class="log-entry info">System ready. Enter assembly code and click ASSEMBLE.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Visualizations -->
+        <div class="right-panel">
+            <!-- Registers -->
+            <div class="panel-section">
+                <h2>Registers</h2>
+                <div class="registers-grid">
+                    <div class="register" id="reg-ax"><span class="register-name">AX</span><span class="register-value">0000</span></div>
+                    <div class="register" id="reg-bx"><span class="register-name">BX</span><span class="register-value">0000</span></div>
+                    <div class="register" id="reg-cx"><span class="register-name">CX</span><span class="register-value">0000</span></div>
+                    <div class="register" id="reg-dx"><span class="register-name">DX</span><span class="register-value">0000</span></div>
+                    <div class="register" id="reg-si"><span class="register-name">SI</span><span class="register-value">0000</span></div>
+                    <div class="register" id="reg-di"><span class="register-name">DI</span><span class="register-value">0000</span></div>
+                    <div class="register" id="reg-ip"><span class="register-name">IP</span><span class="register-value">0000</span></div>
+                    <div class="register" id="reg-sp"><span class="register-name">SP</span><span class="register-value">FFFE</span></div>
+                </div>
+            </div>
+
+            <!-- Flags -->
+            <div class="panel-section">
+                <h2>Flags</h2>
+                <div class="flags-grid">
+                    <div class="flag" id="flag-cf"><span class="flag-name">CF</span><span class="flag-value">0</span></div>
+                    <div class="flag" id="flag-zf"><span class="flag-name">ZF</span><span class="flag-value">0</span></div>
+                    <div class="flag" id="flag-sf"><span class="flag-name">SF</span><span class="flag-value">0</span></div>
+                    <div class="flag" id="flag-of"><span class="flag-name">OF</span><span class="flag-value">0</span></div>
+                    <div class="flag" id="flag-pf"><span class="flag-name">PF</span><span class="flag-value">0</span></div>
+                </div>
+            </div>
+
+            <!-- Memory Viewer -->
+            <div class="panel-section">
+                <h2>Memory Viewer</h2>
+                <div class="memory-controls">
+                    <input type="text" id="memAddr" value="2000" maxlength="5" placeholder="2000">
+                    <button onclick="updateMemoryView()">VIEW</button>
+                    <button onclick="showMemoryEditor()">EDIT</button>
+                </div>
+                <div class="memory-grid" id="memGrid"></div>
+            </div>
+
+            <!-- Memory Editor Modal -->
+            <div id="memoryEditorModal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="closeMemoryEditor()">&times;</span>
+                    <h2>Memory Editor</h2>
+                    <p>Enter hex values (00-FF), one per line. Address auto-increments.</p>
+                    <div class="mem-edit-controls">
+                        <label>Start Address:</label>
+                        <input type="text" id="memEditStartAddr" value="2000">
+                        <button onclick="startMemoryEdit()">START EDIT</button>
+                    </div>
+                    <div id="memEditDisplay" style="display: none;">
+                        <div class="mem-edit-input-group">
+                            <span id="currentEditAddr" class="mem-edit-addr">2000:</span>
+                            <input type="text" id="memEditValue" maxlength="2" placeholder="00">
+                            <button onclick="writeMemoryByte()">WRITE</button>
+                            <button onclick="closeMemoryEditor()">DONE</button>
+                        </div>
+                        <div id="memEditHistory" class="mem-edit-history"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
