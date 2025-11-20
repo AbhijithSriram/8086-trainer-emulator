@@ -238,24 +238,39 @@ class Assembler:
         # ADD
         elif mnem == 'ADD':
             dest, src = ops.split(',', 1)
-            if dest == 'AL' and src == 'BL': bytes_code, size = [0x00, 0xD8], 2
+            # 1. ADD reg, [SI] or [DI] (Memory) <-- NEW!
+            if src in ['[SI]', '[DI]']:
+                if dest == 'AL': bytes_code, size = [0x02, 0x04 if src == '[SI]' else 0x05], 2
+                elif dest == 'AX': bytes_code, size = [0x03, 0x04 if src == '[SI]' else 0x05], 2
+                else: raise SyntaxError(f"Line {line_num}: ADD memory only supported for AL/AX")
+            # 2. ADD reg, reg
+            elif dest == 'AL' and src == 'BL': bytes_code, size = [0x00, 0xD8], 2
             elif dest == 'AX' and src == 'BX': bytes_code, size = [0x01, 0xD8], 2
+            # 3. ADD reg, immediate
             elif dest == 'AL' and self._is_hex(src):
                 imm_val = int(src, 16)
                 bytes_code, size = [0x04], 2
             else:
                 raise SyntaxError(f"Line {line_num}: Unsupported ADD {ops}")
-        
+
         # SUB
         elif mnem == 'SUB':
             dest, src = ops.split(',', 1)
-            if dest == 'AL' and src == 'BL': bytes_code, size = [0x28, 0xD8], 2
+            # 1. SUB reg, [SI] or [DI] (Memory) <-- NEW!
+            if src in ['[SI]', '[DI]']:
+                if dest == 'AL': bytes_code, size = [0x2A, 0x04 if src == '[SI]' else 0x05], 2
+                elif dest == 'AX': bytes_code, size = [0x2B, 0x04 if src == '[SI]' else 0x05], 2
+                else: raise SyntaxError(f"Line {line_num}: SUB memory only supported for AL/AX")
+            # 2. SUB reg, reg
+            elif dest == 'AL' and src == 'BL': bytes_code, size = [0x28, 0xD8], 2
             elif dest == 'AX' and src == 'BX': bytes_code, size = [0x29, 0xD8], 2
+            # 3. SUB reg, immediate
             elif dest == 'AL' and self._is_hex(src):
                 imm_val = int(src, 16)
                 bytes_code, size = [0x2C], 2
             else:
                 raise SyntaxError(f"Line {line_num}: Unsupported SUB {ops}")
+            
         # ADC (Add with Carry)
         elif mnem == 'ADC':
             dest, src = ops.split(',', 1)
@@ -674,32 +689,52 @@ class Executor:
         # ADD
         elif mnem == 'ADD':
             dest, src = ops.split(',')
-            val = imm if imm is not None else self._get_reg(src)
+            
+            # Determine Value Source
+            if imm is not None:
+                val = imm
+            elif src in ['[SI]', '[DI]']:
+                addr = self.regs.SI if src == '[SI]' else self.regs.DI
+                # If Dest is 16-bit, Read Word. If 8-bit, Read Byte.
+                is_dest_16 = dest in ['AX', 'BX', 'CX', 'DX']
+                val = self.mem.read_word(addr) if is_dest_16 else self.mem.read(addr)
+            else:
+                val = self._get_reg(src)
+
             result = self._get_reg(dest) + val
             
-            # FIXED: explicitly check for 16-bit registers
+            # Check Flags
             is_16bit = dest in ['AX', 'BX', 'CX', 'DX', 'SI', 'DI', 'SP', 'BP']
             size = 16 if is_16bit else 8
+            limit = 0xFFFF if size == 16 else 0xFF
             
             self._set_reg(dest, result)
-            # Check overflow against the CORRECT size (0xFFFF or 0xFF)
-            limit = 0xFFFF if size == 16 else 0xFF
             self.regs.flags['CF'] = 1 if result > limit else 0
             self.regs.update_flags(result, size)
         
         # SUB
         elif mnem == 'SUB':
             dest, src = ops.split(',')
-            val = imm if imm is not None else self._get_reg(src)
+            
+            # Determine Value Source
+            if imm is not None:
+                val = imm
+            elif src in ['[SI]', '[DI]']:
+                addr = self.regs.SI if src == '[SI]' else self.regs.DI
+                is_dest_16 = dest in ['AX', 'BX', 'CX', 'DX']
+                val = self.mem.read_word(addr) if is_dest_16 else self.mem.read(addr)
+            else:
+                val = self._get_reg(src)
+
             result = self._get_reg(dest) - val
             
-            # FIXED: explicitly check for 16-bit registers
             is_16bit = dest in ['AX', 'BX', 'CX', 'DX', 'SI', 'DI', 'SP', 'BP']
             size = 16 if is_16bit else 8
             
             self._set_reg(dest, result)
             self.regs.flags['CF'] = 1 if result < 0 else 0
             self.regs.update_flags(result, size)
+            
         # ADC
         elif mnem == 'ADC':
             dest, src = ops.split(',')
