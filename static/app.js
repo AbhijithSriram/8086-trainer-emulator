@@ -195,12 +195,12 @@ INC SI
 INC SI
 ; Loop starts at 100B
 ADD AX, [SI]      ; Add Number
-JNC 1010          ; Skip carry inc
+JNC 1012       ; Skip carry inc
 INC DX            ; Handle Carry
-INC SI            ; Move SI
-INC SI            ; Move SI
 DEC CL
 JNZ 100B          ; Loop
+INC SI
+INC SI
 MOV [SI], AX      ; Store Low
 INC SI
 INC SI
@@ -219,7 +219,7 @@ INC SI
 MOV AL, [SI]      ; Init Max
 MOV BL, [SI]      ; Init Min
 DEC CL
-; Loop start 100E
+; Loop start 100C
 INC SI
 ; Check Max
 CMP AL, [SI]
@@ -227,10 +227,10 @@ JNB 1015          ; Skip if Max >= Next
 MOV AL, [SI]      ; Update Max
 ; Check Min
 CMP BL, [SI]
-JC 101A           ; Skip if Min < Next
+JC 1019           ; Skip if Min < Next
 MOV BL, [SI]      ; Update Min
 DEC CL
-JNZ 100E          ; Loop
+JNZ 100C          ; Loop
 MOV DI, 3000
 MOV [DI], AL      ; Store Max
 INC DI
@@ -252,24 +252,24 @@ MOV DL, [SI]      ; Inner Count
 INC SI
 MOV AL, [SI]      ; Load Current
 DEC DL
-JZ 1022           ; -> NEXT_PASS
-; Inner Loop (100E)
+JZ 1027           ; -> NEXT_PASS
+; Inner Loop (1011)
 INC SI
 MOV BL, [SI]      ; Load Next
 CMP AL, BL
-JNB 101A          ; [ASC] Use JNA for DESC
+JNB 101F          ; [ASC] Use JNA for DESC
 DEC SI            ; Swap Logic
 MOV [SI], AL
 MOV AL, BL
-JMP 101D          ; -> CONT
-; NOSWAP (101A)
+JMP 1023          ; -> CONT
+; NOSWAP (101F)
 DEC SI
 MOV [SI], BL
 INC SI
-; CONT (101D)
+; CONT (1023)
 DEC DL
-JNZ 100E          ; -> Inner Loop
-; NEXT_PASS (1022)
+JNZ 1011          ; -> Inner Loop
+; NEXT_PASS (1027)
 MOV [SI], AL
 DEC CL
 JNZ 1005          ; -> Outer Loop
