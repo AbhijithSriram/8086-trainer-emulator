@@ -248,52 +248,20 @@ class Assembler:
         
         # MUL
         elif mnem == 'MUL':
-            # FIXED: Explicitly check for 8-bit vs 16-bit registers
-            is_8bit = ops in ['AL', 'BL', 'CL', 'DL', 'AH', 'BH', 'CH', 'DH']
-            
-            if is_8bit:
-                # 8-bit Multiply: AX = AL * reg8
-                result = self.regs.AL * self._get_reg(ops)
-                self.regs.AX = result & 0xFFFF
-                self.regs.update_flags(result, 16) # Result is 16-bit
+            if ops == 'BL': bytes_code, size = [0xF6, 0xE3], 2
+            elif ops == 'BX': bytes_code, size = [0xF7, 0xE3], 2
+            elif ops == 'CL': bytes_code, size = [0xF6, 0xE1], 2
             else:
-                # 16-bit Multiply: DX:AX = AX * reg16
-                result = self.regs.AX * self._get_reg(ops)
-                self.regs.AX = result & 0xFFFF          # Low Word
-                self.regs.DX = (result >> 16) & 0xFFFF  # High Word
-                self.regs.update_flags(result, 32)      # Result is 32-bit
-
+                raise SyntaxError(f"Line {line_num}: Unsupported MUL {ops}")
+        
         # DIV
         elif mnem == 'DIV':
-            divisor = self._get_reg(ops)
-            if divisor == 0:
-                raise ZeroDivisionError("Division by zero")
-            
-            # FIXED: Explicitly check for 8-bit vs 16-bit registers
-            is_8bit = ops in ['AL', 'BL', 'CL', 'DL', 'AH', 'BH', 'CH', 'DH']
-            
-            if is_8bit:
-                # 8-bit Div: AX / reg8 -> AL (Quotient), AH (Remainder)
-                quotient = self.regs.AX // divisor
-                remainder = self.regs.AX % divisor
-                
-                if quotient > 0xFF:
-                    raise ValueError("Divide Overflow")
-                    
-                self.regs.AL = quotient & 0xFF
-                self.regs.AH = remainder & 0xFF
+            if ops == 'BL': bytes_code, size = [0xF6, 0xF3], 2
+            elif ops == 'BX': bytes_code, size = [0xF7, 0xF3], 2
+            elif ops == 'CL': bytes_code, size = [0xF6, 0xF1], 2
             else:
-                # 16-bit Div: DX:AX / reg16 -> AX (Quotient), DX (Remainder)
-                dividend = (self.regs.DX << 16) | self.regs.AX
-                quotient = dividend // divisor
-                remainder = dividend % divisor
-                
-                if quotient > 0xFFFF:
-                    raise ValueError("Divide Overflow")
-                
-                self.regs.AX = quotient & 0xFFFF
-                self.regs.DX = remainder & 0xFFFF
-                
+                raise SyntaxError(f"Line {line_num}: Unsupported DIV {ops}")
+        
         # INC
         elif mnem == 'INC':
             # 16-bit Registers
@@ -699,32 +667,52 @@ class Executor:
         
         # MUL
         elif mnem == 'MUL':
-            if len(ops) == 2:  # 8-bit
+            # FIXED: Explicitly check for 8-bit vs 16-bit registers
+            is_8bit = ops in ['AL', 'BL', 'CL', 'DL', 'AH', 'BH', 'CH', 'DH']
+            
+            if is_8bit:
+                # 8-bit Multiply: AX = AL * reg8
                 result = self.regs.AL * self._get_reg(ops)
                 self.regs.AX = result & 0xFFFF
-            else:  # 16-bit
+                self.regs.update_flags(result, 16) # Result is 16-bit
+            else:
+                # 16-bit Multiply: DX:AX = AX * reg16
                 result = self.regs.AX * self._get_reg(ops)
-                self.regs.AX = result & 0xFFFF
-                self.regs.DX = (result >> 16) & 0xFFFF
-        
+                self.regs.AX = result & 0xFFFF          # Low Word
+                self.regs.DX = (result >> 16) & 0xFFFF  # High Word
+                self.regs.update_flags(result, 32)      # Result is 32-bit
+
         # DIV
         elif mnem == 'DIV':
             divisor = self._get_reg(ops)
             if divisor == 0:
                 raise ZeroDivisionError("Division by zero")
             
-            if len(ops) == 2:  # 8-bit
+            # FIXED: Explicitly check for 8-bit vs 16-bit registers
+            is_8bit = ops in ['AL', 'BL', 'CL', 'DL', 'AH', 'BH', 'CH', 'DH']
+            
+            if is_8bit:
+                # 8-bit Div: AX / reg8 -> AL (Quotient), AH (Remainder)
                 quotient = self.regs.AX // divisor
                 remainder = self.regs.AX % divisor
+                
+                if quotient > 0xFF:
+                    raise ValueError("Divide Overflow")
+                    
                 self.regs.AL = quotient & 0xFF
                 self.regs.AH = remainder & 0xFF
-            else:  # 16-bit
+            else:
+                # 16-bit Div: DX:AX / reg16 -> AX (Quotient), DX (Remainder)
                 dividend = (self.regs.DX << 16) | self.regs.AX
                 quotient = dividend // divisor
                 remainder = dividend % divisor
+                
+                if quotient > 0xFFFF:
+                    raise ValueError("Divide Overflow")
+                
                 self.regs.AX = quotient & 0xFFFF
                 self.regs.DX = remainder & 0xFFFF
-        
+                
         # INC
         elif mnem == 'INC':
             result = self._get_reg(ops) + 1
