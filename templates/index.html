@@ -120,6 +120,22 @@ HLT" spellcheck="false"></textarea>
                 <div class="memory-grid" id="memGrid"></div>
             </div>
 
+            <div class="panel-section" style="grid-column: 1 / -1; margin-top: 20px;">
+                <h2>📚 Quick-Load Examples (Auto-loads Code & Data)</h2>
+                <div class="presets-grid">
+                    <button onclick="loadPreset('add8')">1. 8-Bit ADD (Stress Test)</button>
+                    <button onclick="loadPreset('sub8')">2. 8-Bit SUB (Borrow)</button>
+                    <button onclick="loadPreset('muldiv8')">3. 8-Bit MUL & DIV</button>
+                    <button onclick="loadPreset('add16')">4. 16-Bit ADD (ADC)</button>
+                    <button onclick="loadPreset('mul16')">5. 16-Bit MUL (Max)</button>
+                    <button onclick="loadPreset('complements')">6. 1s & 2s Complement</button>
+                    <button onclick="loadPreset('sum8')">7. Sum Series (Prof. Test)</button>
+                    <button onclick="loadPreset('sum16')">8. Sum Series (16-Bit)</button>
+                    <button onclick="loadPreset('largest')">9. Find Largest (Array)</button>
+                    <button onclick="loadPreset('sort')">10. Sort Array (Ascending)</button>
+                </div>
+            </div>
+
             <!-- Memory Editor Modal -->
             <div id="memoryEditorModal" class="modal">
                 <div class="modal-content">
