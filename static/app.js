@@ -6,76 +6,68 @@ const API_BASE = '';  // Empty for same origin
 // ==========================================
 
 const PRESETS = {
-    // 1. 8-Bit Addition (Stress Test: FF + FF)
-    'add8': {
+    // 1. 8-Bit Arithmetic (Add & Sub)
+    'math8': {
         startAddr: '1000',
-        code: `; 8-BIT ADDITION (Stress Test: FF + FF)
-; Checks Carry generation
+        code: `; 1. 8-BIT ADDITION & SUBTRACTION
+; A) Addition: FF + FF (Stress Test)
 MOV SI, 2000
 MOV AL, [SI]      ; Load FF
 INC SI
 MOV BL, [SI]      ; Load FF
 ADD AL, BL        ; Result FE, Carry=1
-MOV DL, 00        ; Clear Carry Reg
-ADC DL, 00        ; Add Carry to DL
+MOV DL, 00
+ADC DL, 00        ; DL becomes 01
 MOV SI, 2002
-MOV [SI], AL      ; Store FE
+MOV [SI], AL      ; Store Sum (FE)
 INC SI
-MOV [SI], DL      ; Store 01
+MOV [SI], DL      ; Store Carry (01)
+
+; B) Subtraction: 05 - 0A (Borrow Test)
+MOV SI, 2000
+MOV AL, 05
+MOV BL, 0A
+SUB AL, BL        ; Result FB, Borrow=1
+MOV DL, 00
+SBB DL, 00        ; DL becomes FF (-1)
+MOV SI, 2004
+MOV [SI], AL      ; Store Diff
+INC SI
+MOV [SI], DL      ; Store Borrow
 HLT`,
         memory: { addr: '2000', data: [0xFF, 0xFF] }
     },
 
-    // 2. 8-Bit Subtraction (Stress Test: Borrow)
-    'sub8': {
-        startAddr: '1000',
-        code: `; 8-BIT SUBTRACTION (Stress Test: 05 - 0A)
-; Checks Borrow generation
-MOV SI, 2000
-MOV AL, [SI]      ; Load 05
-INC SI
-MOV BL, [SI]      ; Load 0A
-SUB AL, BL        ; Result FB, Borrow=1
-MOV DL, 00
-SBB DL, 00        ; Subtract Borrow from DL
-MOV SI, 2002
-MOV [SI], AL      ; Store Result
-INC SI
-MOV [SI], DL      ; Store Borrow Status
-HLT`,
-        memory: { addr: '2000', data: [0x05, 0x0A] }
-    },
-
-    // 3. 8-Bit Multiplication & Division
+    // 2. 8-Bit Mul & Div
     'muldiv8': {
         startAddr: '1000',
-        code: `; 8-BIT MUL & DIV
-; 1. Multiply FF * FF (Max 8-bit)
+        code: `; 2. 8-BIT MUL & DIV
+; A) Multiply FF * FF (Max 8-bit)
 MOV SI, 2000
-MOV AL, [SI]
-MOV BL, [SI]
+MOV AL, [SI]      ; Load FF
+MOV BL, [SI]      ; Load FF
 MUL BL            ; Result FE01 in AX
 MOV SI, 2002
 MOV [SI], AX      ; Store FE01
-; 2. Divide (F0 / 02)
-MOV SI, 2000
+
+; B) Divide F0 / 02
 MOV AX, 0000      ; Clear AX
 MOV AL, 0F0H      ; Load F0
 MOV BL, 02
 DIV BL            ; AL=78 (Quot), AH=00 (Rem)
 MOV SI, 2004
-MOV [SI], AL
+MOV [SI], AL      ; Store Quot
 INC SI
-MOV [SI], AH
+MOV [SI], AH      ; Store Rem
 HLT`,
-        memory: { addr: '2000', data: [0xFF] } // FF is used for Mul
+        memory: { addr: '2000', data: [0xFF, 0xFF] } // Fixed: Now provides 2 bytes
     },
 
-    // 4. 16-Bit Addition (ADC Method)
-    'add16': {
+    // 3. 16-Bit Addition & Subtraction
+    'math16': {
         startAddr: '1000',
-        code: `; 16-BIT ADDITION (ADC Method)
-; FFFF + 0001 = 10000
+        code: `; 3. 16-BIT ADD & SUB
+; A) Add: FFFF + 0001
 MOV SI, 2000
 MOV AX, [SI]      ; Load FFFF
 INC SI
@@ -83,55 +75,96 @@ INC SI
 MOV BX, [SI]      ; Load 0001
 ADD AX, BX        ; Sum=0000, Carry=1
 MOV DX, 0000
-ADC DX, 0000      ; Add Carry to DX
+ADC DX, 0000      ; Add Carry
 MOV SI, 2004
 MOV [SI], AX      ; Store Sum
 INC SI
 INC SI
 MOV [SI], DX      ; Store Carry
+
+; B) Sub: 0005 - 000A
+MOV AX, 0005
+MOV BX, 000A
+SUB AX, BX        ; Result FFFB, Borrow=1
+MOV DX, 0000
+SBB DX, 0000      ; Handle Borrow
+MOV SI, 2008
+MOV [SI], AX      ; Store Diff
+INC SI
+INC SI
+MOV [SI], DX      ; Store Borrow
 HLT`,
         memory: { addr: '2000', data: [0xFF, 0xFF, 0x01, 0x00] }
     },
 
-    // 5. 16-Bit Multiplication
-    'mul16': {
+    // 4. 16-Bit Mul & Div
+    'muldiv16': {
         startAddr: '1000',
-        code: `; 16-BIT MULTIPLICATION (Max Value)
-; FFFF * FFFF = FFFE0001
+        code: `; 4. 16-BIT MUL & DIV
+; A) Mul: FFFF * FFFF (Max 16-bit)
 MOV SI, 2000
 MOV AX, [SI]      ; Load FFFF
-MOV BX, [SI]      ; Load FFFF
-MUL BX            ; DX:AX = Result
+MOV BX, AX        ; BX = FFFF
+MUL BX            ; Result FFFE0001 (DX:AX)
 MOV SI, 2002
-MOV [SI], AX      ; Store Low Word (0001)
+MOV [SI], AX      ; Store Low Word
 INC SI
 INC SI
-MOV [SI], DX      ; Store High Word (FFFE)
+MOV [SI], DX      ; Store High Word
+
+; B) Div: 1388 / 0064 (5000 / 100)
+MOV AX, 1388      ; Dividend Low
+MOV DX, 0000      ; Dividend High
+MOV BX, 0064      ; Divisor
+DIV BX            ; AX=32 (50), DX=00
+MOV SI, 2006
+MOV [SI], AX      ; Store Quot
 HLT`,
         memory: { addr: '2000', data: [0xFF, 0xFF] }
     },
 
-    // 6. 1s & 2s Complement
-    'complements': {
+    // 5. 1s Complement (8 & 16 bit)
+    'ones_comp': {
         startAddr: '1000',
-        code: `; 1s and 2s COMPLEMENT
+        code: `; 5. 1s COMPLEMENT (NOT)
+; 8-Bit
+MOV AL, 00
+NOT AL            ; Becomes FF
 MOV SI, 2000
-MOV AL, [SI]      ; Load Data (00)
-NOT AL            ; 1s Comp (FF)
-MOV [SI], AL      ; Store 1s Comp
+MOV [SI], AL
+
+; 16-Bit
+MOV AX, F0F0
+NOT AX            ; Becomes 0F0F
 INC SI
-MOV AL, [SI]      ; Load Data (01)
-NEG AL            ; 2s Comp (FF)
-MOV [SI], AL      ; Store 2s Comp
+MOV [SI], AX
 HLT`,
-        memory: { addr: '2000', data: [0x00, 0x01] }
+        memory: { addr: '2000', data: [0x00] }
     },
 
-    // 7. Sum of Series (8-Bit) - THE PROFESSOR TEST
+    // 6. 2s Complement (8 & 16 bit)
+    'twos_comp': {
+        startAddr: '1000',
+        code: `; 6. 2s COMPLEMENT (NEG)
+; 8-Bit
+MOV AL, 01
+NEG AL            ; Becomes FF (-1)
+MOV SI, 2000
+MOV [SI], AL
+
+; 16-Bit
+MOV AX, 0001
+NEG AX            ; Becomes FFFF (-1)
+INC SI
+MOV [SI], AX
+HLT`,
+        memory: { addr: '2000', data: [0x00] }
+    },
+
+    // 7. Sum of Series (8-Bit)
     'sum8': {
         startAddr: '1000',
-        code: `; SUM OF SERIES (8-BIT)
-; The "Professor Proof" Test
+        code: `; 7. SUM OF SERIES (8-BIT)
 ; Input: Count=FF, Values=All FF
 ; Math: 255 * 255 = 65025 (FE01)
 MOV SI, 2000
@@ -144,17 +177,16 @@ MOV BL, [SI]      ; Load Value
 ADD AX, BX        ; Add to 16-bit AX
 INC SI
 DEC CL
-JNZ 100C          ; Jump back to MOV BL
+JNZ 100C          ; Loop
 MOV [SI], AX      ; Store FE01
 HLT`,
-        // This creates an array [FF, FF, FF....] (256 bytes long)
         memory: { addr: '2000', data: new Array(256).fill(0xFF) }
     },
 
     // 8. Sum of Series (16-Bit)
     'sum16': {
         startAddr: '1000',
-        code: `; SUM OF SERIES (16-BIT)
+        code: `; 8. SUM OF SERIES (16-BIT)
 MOV SI, 2000
 MOV CL, [SI]      ; Load Count
 MOV AX, 0000      ; Sum Low
@@ -165,8 +197,8 @@ INC SI
 ADD AX, [SI]      ; Add Number
 JNC 1010          ; Skip carry inc
 INC DX            ; Handle Carry
-INC SI            ; Move SI (Low)
-INC SI            ; Move SI (High)
+INC SI            ; Move SI
+INC SI            ; Move SI
 DEC CL
 JNZ 100B          ; Loop
 MOV [SI], AX      ; Store Low
@@ -177,34 +209,41 @@ HLT`,
         memory: { addr: '2000', data: [0x03, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0x02, 0x00] }
     },
 
-    // 9. Largest Number in Array
-    'largest': {
+    // 9. Largest & Smallest
+    'minmax': {
         startAddr: '1000',
-        code: `; FIND LARGEST NUMBER
-; Array: 05, 01, 99, FF, 02
+        code: `; 9. LARGEST & SMALLEST
 MOV SI, 2000
 MOV CL, [SI]      ; Count
 INC SI
 MOV AL, [SI]      ; Init Max
+MOV BL, [SI]      ; Init Min
 DEC CL
-; Loop starts at 100A
+; Loop start 100E
 INC SI
+; Check Max
 CMP AL, [SI]
-JNB 1011          ; Skip if Max >= Next
+JNB 1015          ; Skip if Max >= Next
 MOV AL, [SI]      ; Update Max
+; Check Min
+CMP BL, [SI]
+JC 101A           ; Skip if Min < Next
+MOV BL, [SI]      ; Update Min
 DEC CL
-JNZ 100A          ; Loop
+JNZ 100E          ; Loop
 MOV DI, 3000
-MOV [DI], AL      ; Result at 3000
+MOV [DI], AL      ; Store Max
+INC DI
+MOV [DI], BL      ; Store Min
 HLT`,
-        memory: { addr: '2000', data: [0x05, 0x01, 0x99, 0xFF, 0x02, 0x10] }
+        memory: { addr: '2000', data: [0x05, 0x12, 0x05, 0x99, 0x01, 0x88] }
     },
 
-    // 10. Sorting (Ascending)
+    // 10. Sorting (Ascending & Descending)
     'sort': {
         startAddr: '1000',
-        code: `; SORT ARRAY (ASCENDING)
-; Input: 04, FF, 10, 80, 00
+        code: `; 10. SORT ARRAY
+; Change JNB to JNA for Descending
 MOV SI, 1300
 MOV CL, [SI]      ; Outer Count
 ; Outer Loop (1005)
@@ -218,7 +257,7 @@ JZ 1022           ; -> NEXT_PASS
 INC SI
 MOV BL, [SI]      ; Load Next
 CMP AL, BL
-JNB 101A          ; -> NOSWAP
+JNB 101A          ; [ASC] Use JNA for DESC
 DEC SI            ; Swap Logic
 MOV [SI], AL
 MOV AL, BL
@@ -236,6 +275,17 @@ DEC CL
 JNZ 1005          ; -> Outer Loop
 HLT`,
         memory: { addr: '1300', data: [0x04, 0xFF, 0x10, 0x80, 0x00] }
+    },
+    
+    // Extra: Divide Error
+    'diverror': {
+        startAddr: '1000',
+        code: `; EXTRA: DIVIDE BY ZERO
+MOV AX, 1000
+MOV BL, 00
+DIV BL            ; This will trigger error
+HLT`,
+        memory: { addr: '2000', data: [0x00] }
     }
 };
 
