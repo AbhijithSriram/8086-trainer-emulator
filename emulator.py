@@ -201,16 +201,27 @@ class Assembler:
             
             # MOV [SI/DI], reg
             elif dest in ['[SI]', '[DI]']:
-                # 8-bit sources
+                # 8-bit sources (Low Bytes)
                 if src == 'AL': bytes_code, size = [0x88, 0x04 if dest == '[SI]' else 0x05], 2
-                elif src == 'BL': bytes_code, size = [0x88, 0x1C if dest == '[SI]' else 0x1D], 2
                 elif src == 'CL': bytes_code, size = [0x88, 0x0C if dest == '[SI]' else 0x0D], 2
                 elif src == 'DL': bytes_code, size = [0x88, 0x14 if dest == '[SI]' else 0x15], 2
-                # 16-bit sources (Added BX, CX, DX support)
+                elif src == 'BL': bytes_code, size = [0x88, 0x1C if dest == '[SI]' else 0x1D], 2
+                
+                # 8-bit sources (High Bytes) - THIS WAS MISSING
+                elif src == 'AH': bytes_code, size = [0x88, 0x24 if dest == '[SI]' else 0x25], 2
+                elif src == 'CH': bytes_code, size = [0x88, 0x2C if dest == '[SI]' else 0x2D], 2
+                elif src == 'DH': bytes_code, size = [0x88, 0x34 if dest == '[SI]' else 0x35], 2
+                elif src == 'BH': bytes_code, size = [0x88, 0x3C if dest == '[SI]' else 0x3D], 2
+                
+                # 16-bit sources
                 elif src == 'AX': bytes_code, size = [0x89, 0x04 if dest == '[SI]' else 0x05], 2
-                elif src == 'BX': bytes_code, size = [0x89, 0x1C if dest == '[SI]' else 0x1D], 2
                 elif src == 'CX': bytes_code, size = [0x89, 0x0C if dest == '[SI]' else 0x0D], 2
                 elif src == 'DX': bytes_code, size = [0x89, 0x14 if dest == '[SI]' else 0x15], 2
+                elif src == 'BX': bytes_code, size = [0x89, 0x1C if dest == '[SI]' else 0x1D], 2
+                elif src == 'SP': bytes_code, size = [0x89, 0x24 if dest == '[SI]' else 0x25], 2
+                elif src == 'BP': bytes_code, size = [0x89, 0x2C if dest == '[SI]' else 0x2D], 2
+                elif src == 'SI': bytes_code, size = [0x89, 0x34 if dest == '[SI]' else 0x35], 2
+                elif src == 'DI': bytes_code, size = [0x89, 0x3C if dest == '[SI]' else 0x3D], 2
                 else:
                     raise SyntaxError(f"Line {line_num}: Unsupported MOV {dest}, {src}")
                 
@@ -712,7 +723,7 @@ class Executor:
                 
                 self.regs.AX = quotient & 0xFFFF
                 self.regs.DX = remainder & 0xFFFF
-                
+
         # INC
         elif mnem == 'INC':
             result = self._get_reg(ops) + 1
