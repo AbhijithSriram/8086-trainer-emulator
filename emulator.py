@@ -256,7 +256,32 @@ class Assembler:
                 bytes_code, size = [0x2C], 2
             else:
                 raise SyntaxError(f"Line {line_num}: Unsupported SUB {ops}")
-        
+        # ADC (Add with Carry)
+        elif mnem == 'ADC':
+            dest, src = ops.split(',', 1)
+            # ADC reg, immediate
+            if self._is_hex(src):
+                imm_val = int(src, 16)
+                if dest in ['AL','BL','CL','DL','AH','BH','CH','DH']: bytes_code, size = [0x80, 0xD0], 2
+                else: bytes_code, size = [0x81, 0xD0], 4
+            # ADC reg, reg
+            else:
+                if (dest.endswith('L') or dest.endswith('H')): bytes_code, size = [0x10, 0xC0], 2
+                else: bytes_code, size = [0x11, 0xC0], 2
+
+        # SBB (Subtract with Borrow)
+        elif mnem == 'SBB':
+            dest, src = ops.split(',', 1)
+            # SBB reg, immediate
+            if self._is_hex(src):
+                imm_val = int(src, 16)
+                if dest in ['AL','BL','CL','DL','AH','BH','CH','DH']: bytes_code, size = [0x80, 0xD8], 2
+                else: bytes_code, size = [0x81, 0xD8], 4
+            # SBB reg, reg
+            else:
+                if (dest.endswith('L') or dest.endswith('H')): bytes_code, size = [0x18, 0xC0], 2
+                else: bytes_code, size = [0x19, 0xC0], 2
+
         # MUL
         elif mnem == 'MUL':
             if ops == 'BL': bytes_code, size = [0xF6, 0xE3], 2
@@ -675,7 +700,35 @@ class Executor:
             self._set_reg(dest, result)
             self.regs.flags['CF'] = 1 if result < 0 else 0
             self.regs.update_flags(result, size)
-        
+        # ADC
+        elif mnem == 'ADC':
+            dest, src = ops.split(',')
+            val = imm if imm is not None else self._get_reg(src)
+            # Add Value + Previous Carry
+            result = self._get_reg(dest) + val + self.regs.flags['CF']
+            
+            is_16bit = dest in ['AX', 'BX', 'CX', 'DX', 'SI', 'DI', 'SP', 'BP']
+            size = 16 if is_16bit else 8
+            limit = 0xFFFF if size == 16 else 0xFF
+            
+            self._set_reg(dest, result)
+            self.regs.flags['CF'] = 1 if result > limit else 0
+            self.regs.update_flags(result, size)
+
+        # SBB
+        elif mnem == 'SBB':
+            dest, src = ops.split(',')
+            val = imm if imm is not None else self._get_reg(src)
+            # Subtract Value - Previous Borrow (CF)
+            result = self._get_reg(dest) - val - self.regs.flags['CF']
+            
+            is_16bit = dest in ['AX', 'BX', 'CX', 'DX', 'SI', 'DI', 'SP', 'BP']
+            size = 16 if is_16bit else 8
+            
+            self._set_reg(dest, result)
+            self.regs.flags['CF'] = 1 if result < 0 else 0
+            self.regs.update_flags(result, size)
+            
         # MUL
         elif mnem == 'MUL':
             # FIXED: Explicitly check for 8-bit vs 16-bit registers
