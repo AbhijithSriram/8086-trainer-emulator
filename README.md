@@ -8,7 +8,7 @@ Built out of self interest for the IT Department at SSN College of Engineering t
 
 ##  Live Demo
 
-**[Click here to launch the Emulator](https://emulator-8086-598092406092.asia-south1.run.app/)** (Hosted on Google Cloud Run)
+**[Click here to launch the Emulator](https://8086-emulator.abhijith-sriram.in/)** (Self-hosted)
 
 ---
 
@@ -60,7 +60,7 @@ This emulator supports a comprehensive set of instructions required for academic
 | **Backend** | Python 3.11, Flask (API & Emulator Logic) |
 | **Frontend** | HTML5, CSS3 (Retro Theme), JavaScript (Async Fetch API) |
 | **Containerization** | Docker |
-| **Cloud** | Google Cloud Run (Serverless Deployment) |
+| **Hosting** | Self-hosted (systemd + gunicorn, behind a Cloudflare Tunnel) |
 
 ---
 
@@ -162,6 +162,21 @@ Since this project uses a Python backend, you cannot just open `index.html`.
    ```
 
 3. **Open browser at** `http://localhost:8080`
+
+---
+
+##  Deployment
+
+The live instance runs on a homeserver as a systemd service (gunicorn), reachable
+through a Cloudflare Tunnel. To install it on a fresh box:
+
+```bash
+git clone https://github.com/AbhijithSriram/8086-trainer-emulator.git /home/abhijith/8086-emulator
+sudo bash /home/abhijith/8086-emulator/deploy/install.sh
+```
+
+See [`deploy/install.sh`](deploy/install.sh) and
+[`deploy/8086-emulator.service`](deploy/8086-emulator.service) for details.
 
 ---
 

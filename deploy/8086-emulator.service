@@ -1,0 +1,44 @@
+# systemd unit for the 8086 trainer emulator. Installed by deploy/install.sh.
+#
+# Logs:  journalctl -u 8086-emulator -f
+
+[Unit]
+Description=8086 Trainer Kit Emulator (Flask)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=abhijith
+Group=abhijith
+
+WorkingDirectory=/home/abhijith/8086-emulator
+Environment=PYTHONUNBUFFERED=1
+
+# emulator_sessions lives in a plain in-process dict keyed by Flask session
+# id -- several worker *processes* would each keep their own copy and answer
+# requests for the same browser session inconsistently. One worker, several
+# threads, same reasoning as any other single-process-state Flask app.
+ExecStart=/home/abhijith/8086-emulator/.venv/bin/gunicorn \
+    --workers 1 \
+    --threads 8 \
+    --timeout 120 \
+    --bind 127.0.0.1:8086 \
+    --access-logfile - \
+    --error-logfile - \
+    app:app
+
+Restart=always
+RestartSec=3
+
+NoNewPrivileges=true
+PrivateTmp=true
+# The app has no data directory and writes nothing to disk, so the whole
+# filesystem can stay read-only -- no ReadWritePaths needed.
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target
