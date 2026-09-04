@@ -34,9 +34,12 @@ RestartSec=3
 NoNewPrivileges=true
 PrivateTmp=true
 # The app has no data directory and writes nothing to disk, so the whole
-# filesystem can stay read-only -- no ReadWritePaths needed.
+# filesystem can stay read-only -- no ReadWritePaths needed. ProtectHome must
+# stay false: the app and its venv live under /home/abhijith, and
+# ProtectHome=true hides /home entirely, which is what made systemd unable to
+# find .venv/bin/gunicorn.
 ProtectSystem=strict
-ProtectHome=true
+ProtectHome=false
 ProtectKernelTunables=true
 RestrictSUIDSGID=true
 
